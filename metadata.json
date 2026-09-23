@@ -1,0 +1,7 @@
+{
+  "name": "CIO-KE: Civil Information Overlay & Knowledge Environment",
+  "description": "AI-enabled decision-support and civil knowledge integration platform for Civil Affairs, fusing civil systems, information environment, and commander decision cycles.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
