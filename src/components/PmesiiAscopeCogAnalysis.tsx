@@ -24,7 +24,8 @@ import {
   ExternalLink,
   HelpCircle,
   TrendingUp,
-  Cpu
+  Cpu,
+  Compass
 } from 'lucide-react';
 import { 
   CrosswalkCell, 
@@ -43,11 +44,13 @@ import {
 interface PmesiiAscopeCogAnalysisProps {
   entities: CivilEntity[];
   onSelectEntityOnCop?: (entity: CivilEntity) => void;
+  onNavigateToOpDesign?: () => void;
 }
 
 export const PmesiiAscopeCogAnalysis: React.FC<PmesiiAscopeCogAnalysisProps> = ({
   entities,
   onSelectEntityOnCop,
+  onNavigateToOpDesign,
 }) => {
   const [activeViewMode, setActiveViewMode] = useState<'matrix' | 'cog' | 'crossmap'>('matrix');
 
@@ -113,9 +116,9 @@ export const PmesiiAscopeCogAnalysis: React.FC<PmesiiAscopeCogAnalysisProps> = (
   };
 
   return (
-    <div className="flex flex-col h-full flex-1 bg-slate-950 text-slate-100 overflow-hidden">
+    <div className="flex flex-col h-full flex-1 bg-black text-slate-100 overflow-hidden">
       {/* Top Controls Strip */}
-      <div className="p-3.5 bg-slate-900 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+      <div className="p-3.5 bg-black border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-sm">
         <div className="flex items-center space-x-3">
           <div className="w-9 h-9 rounded-lg bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
             <Target className="w-5 h-5" />
@@ -133,8 +136,20 @@ export const PmesiiAscopeCogAnalysis: React.FC<PmesiiAscopeCogAnalysisProps> = (
           </div>
         </div>
 
-        {/* View Mode Switcher */}
-        <div className="flex items-center space-x-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-mono">
+        {/* View Mode Switcher & Op Design link */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {onNavigateToOpDesign && (
+            <button
+              onClick={onNavigateToOpDesign}
+              className="px-2.5 py-1.5 bg-black hover:bg-neutral-900 border border-slate-800 text-emerald-300 rounded text-xs font-mono flex items-center gap-1 transition-colors cursor-pointer"
+              title="Switch to Army Operational Design Framework (ADP 5-0)"
+            >
+              <Compass className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Op Design (ADP 5-0)</span>
+            </button>
+          )}
+
+          <div className="flex items-center space-x-1.5 bg-black p-1 rounded-lg border border-slate-800 text-xs font-mono">
           <button
             onClick={() => setActiveViewMode('matrix')}
             className={`px-3 py-1.5 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
@@ -170,6 +185,7 @@ export const PmesiiAscopeCogAnalysis: React.FC<PmesiiAscopeCogAnalysisProps> = (
           </button>
         </div>
       </div>
+    </div>
 
       {/* Main Content Areas */}
       <div className="flex-1 overflow-hidden flex flex-col">

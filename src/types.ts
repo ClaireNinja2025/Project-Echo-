@@ -31,7 +31,13 @@ export type OperationalPhase =
   | 'Phase 1 - Crisis Response' 
   | 'Phase 2 - Large-Scale Combat' 
   | 'Phase 3 - Stabilization & Consolidation' 
-  | 'Phase 4 - Humanitarian Assistance';
+  | 'Phase 4 - Humanitarian Assistance'
+  | 'Phase 0 - Shape'
+  | 'Phase 1 - Deter'
+  | 'Phase 2 - Seize Initiative'
+  | 'Phase 3 - Dominate'
+  | 'Phase 4 - Transition / Stabilize'
+  | 'Phase 5 - Enable Civil Authority';
 
 export interface CivilEntity {
   id: string;

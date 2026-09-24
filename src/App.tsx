@@ -17,6 +17,7 @@ import { DecisionSupportCOA } from './components/DecisionSupportCOA';
 import { CMOCOperations } from './components/CMOCOperations';
 import { DoctrineAssistantModal } from './components/DoctrineAssistantModal';
 import { InformationOperationsWorkspace } from './components/InformationOperationsWorkspace';
+import { ArmyOperationalDesign } from './components/ArmyOperationalDesign';
 import {
   INITIAL_CIVIL_ENTITIES,
   INITIAL_DISRUPTION_NODES,
@@ -132,7 +133,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen w-screen bg-slate-950 flex flex-row overflow-hidden font-sans selection:bg-emerald-500 selection:text-white">
+    <div className="h-screen w-screen bg-black flex flex-row overflow-hidden font-sans selection:bg-blue-600 selection:text-white">
       {/* Sidebar Navigation: All Tabs and Icons on One Side */}
       <SidebarNavigation
         currentRole={currentRole}
@@ -153,14 +154,28 @@ export default function App() {
           onOpenGlobalMap={() => setActiveTab('global-aor')}
           onOpenTacticalCop={() => setActiveTab('cop')}
           onOpenIoWorkspace={() => setActiveTab('io-workspace')}
+          onOpenOpDesign={() => setActiveTab('operational-design')}
         />
 
         {/* Main Content Body */}
         <main className="flex-1 flex flex-col overflow-hidden relative">
+        {activeTab === 'operational-design' && (
+          <ArmyOperationalDesign
+            currentPhase={currentPhase}
+            onPhaseChange={setCurrentPhase}
+            onNavigateToCop={() => setActiveTab('cop')}
+            onNavigateToCoa={() => setActiveTab('coa-wargame')}
+            onNavigateToMoeMop={() => setActiveTab('moe-mop')}
+          />
+        )}
+
         {activeTab === 'io-workspace' && (
           <InformationOperationsWorkspace
             onNavigateToAorMap={(_aorId) => {
               setActiveTab('global-aor');
+            }}
+            onNavigateToOpDesign={() => {
+              setActiveTab('operational-design');
             }}
           />
         )}
@@ -214,7 +229,9 @@ export default function App() {
         )}
 
         {activeTab === 'moe-mop' && (
-          <MoeMopAssessment />
+          <MoeMopAssessment
+            onNavigateToOpDesign={() => setActiveTab('operational-design')}
+          />
         )}
 
         {activeTab === 'narrative-paths' && (
@@ -222,7 +239,9 @@ export default function App() {
         )}
 
         {activeTab === 'coa-wargame' && (
-          <CoaWargamingAnalysis />
+          <CoaWargamingAnalysis
+            onNavigateToOpDesign={() => setActiveTab('operational-design')}
+          />
         )}
 
         {activeTab === 'crosswalk-cog' && (
@@ -232,6 +251,7 @@ export default function App() {
               setSelectedEntity(ent);
               setActiveTab('cop');
             }}
+            onNavigateToOpDesign={() => setActiveTab('operational-design')}
           />
         )}
 

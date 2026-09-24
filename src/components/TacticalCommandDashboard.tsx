@@ -47,7 +47,7 @@ import { CMOCOperations } from './CMOCOperations';
 interface TacticalCommandDashboardProps {
   entities: CivilEntity[];
   selectedEntity: CivilEntity | null;
-  onSelectEntity: (entity: CivilEntity) => void;
+  onSelectEntity: (entity: CivilEntity | null) => void;
   onUpdateEntityStatus: (id: string, status: CivilEntity['status']) => void;
   disruptionNodes: DisruptionNode[];
   onToggleNodeStatus: (nodeId: string) => void;

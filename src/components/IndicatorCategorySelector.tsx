@@ -96,15 +96,13 @@ export const IndicatorCategorySelector: React.FC<IndicatorCategorySelectorProps>
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-md text-xs font-medium border shadow-sm transition-all cursor-pointer ${
           selectedIndicator
-            ? selectedIndicator.id === 'adversary-narratives'
-              ? 'bg-rose-950/80 border-red-500 text-red-200 ring-2 ring-red-500/30'
-              : 'bg-slate-900 border-emerald-600 text-emerald-300 ring-1 ring-emerald-500/20'
-            : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'
+            ? 'bg-slate-800 border-blue-600 text-white ring-1 ring-blue-600/40'
+            : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-600'
         }`}
         title="Select Information Indicator Layer"
       >
         <div className="flex items-center gap-2 truncate">
-          <Layers className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <Layers className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
           <span className="font-mono text-slate-400 text-[11px] hidden sm:inline">INDICATOR LAYER:</span>
           {selectedIndicator ? (
             <span className="font-semibold text-white truncate max-w-[160px] sm:max-w-[210px] flex items-center gap-1.5">
@@ -120,15 +118,15 @@ export const IndicatorCategorySelector: React.FC<IndicatorCategorySelectorProps>
 
       {/* Dropdown Menu Container */}
       {isOpen && (
-        <div className="absolute left-0 mt-1.5 w-80 sm:w-96 max-h-[500px] bg-slate-950/95 border border-slate-700 rounded-lg shadow-2xl z-50 flex flex-col overflow-hidden backdrop-blur-md">
+        <div className="absolute left-0 mt-1.5 w-80 sm:w-96 max-h-[500px] bg-slate-900 border border-slate-700 rounded-md shadow-2xl z-50 flex flex-col overflow-hidden">
           {/* Header & Search Bar */}
-          <div className="p-2.5 bg-slate-900 border-b border-slate-800 space-y-2">
+          <div className="p-2.5 bg-slate-950 border-b border-slate-700 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono font-bold text-slate-200 flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-emerald-400" />
+                <Layers className="w-3.5 h-3.5 text-cyan-400" />
                 Select Indicator Category
               </span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-cyan-400 border border-slate-700">
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-700">
                 {ALL_INFORMATION_INDICATORS.length} INDICATORS
               </span>
             </div>
@@ -139,8 +137,8 @@ export const IndicatorCategorySelector: React.FC<IndicatorCategorySelectorProps>
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Filter (e.g. Adversary, Migration, Fentanyl, PRC)..."
-                className="w-full bg-slate-950 border border-slate-700 rounded pl-8 pr-2.5 py-1 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                placeholder="Filter (e.g. Adversary, Migration, Precursor, PRC)..."
+                className="w-full bg-slate-900 border border-slate-700 rounded pl-8 pr-2.5 py-1 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-600"
                 autoFocus
               />
             </div>
@@ -151,8 +149,8 @@ export const IndicatorCategorySelector: React.FC<IndicatorCategorySelectorProps>
                 onClick={() => setSelectedDomainFilter('ALL')}
                 className={`px-2 py-0.5 rounded transition-colors shrink-0 ${
                   selectedDomainFilter === 'ALL'
-                    ? 'bg-emerald-600 text-white font-bold'
-                    : 'bg-slate-850 text-slate-400 hover:text-slate-200'
+                    ? 'bg-blue-600 text-white font-bold'
+                    : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-700'
                 }`}
               >
                 ALL DOMAINS
@@ -164,7 +162,7 @@ export const IndicatorCategorySelector: React.FC<IndicatorCategorySelectorProps>
                   className={`px-2 py-0.5 rounded transition-colors shrink-0 flex items-center gap-1 ${
                     selectedDomainFilter === dom.id
                       ? 'bg-blue-600 text-white font-bold'
-                      : 'bg-slate-850 text-slate-400 hover:text-slate-200'
+                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-700'
                   }`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dom.color }}></span>
@@ -193,11 +191,11 @@ export const IndicatorCategorySelector: React.FC<IndicatorCategorySelectorProps>
                       setIsOpen(false);
                     }}
                     className={`w-full text-left p-2.5 text-xs transition-colors flex items-start justify-between gap-2 group ${
-                      isAdversaryNarratives
-                        ? 'border-l-4 border-l-red-500 bg-red-950/20 hover:bg-red-950/40'
-                        : isSelected
-                        ? 'bg-slate-850 border-l-4 border-l-emerald-500'
-                        : 'hover:bg-slate-900'
+                      isSelected
+                        ? 'bg-slate-800 border-l-4 border-l-blue-600'
+                        : isAdversaryNarratives
+                        ? 'border-l-4 border-l-red-600/70 bg-slate-900/80 hover:bg-slate-800'
+                        : 'hover:bg-slate-800/60'
                     }`}
                   >
                     <div className="flex-1 min-w-0 space-y-0.5">
@@ -205,28 +203,28 @@ export const IndicatorCategorySelector: React.FC<IndicatorCategorySelectorProps>
                         {getDomainIcon(indicator.domain)}
                         <span
                           className={`font-medium truncate ${
-                            isAdversaryNarratives
-                              ? 'text-red-400 font-bold'
-                              : isSelected
-                              ? 'text-emerald-300 font-bold'
-                              : 'text-slate-200 group-hover:text-white'
+                            isSelected
+                              ? 'text-white font-bold'
+                              : isAdversaryNarratives
+                              ? 'text-red-300 font-medium'
+                              : 'text-slate-300 group-hover:text-white'
                           }`}
                         >
                           {indicator.name}
                         </span>
                         {isAdversaryNarratives && (
-                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-red-900/80 text-red-200 border border-red-600">
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-slate-900 text-red-300 border border-slate-700">
                             ADP 3-13 COGNITIVE
                           </span>
                         )}
                       </div>
 
                       <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400">
-                        <span className="text-slate-500 truncate">{indicator.domain}</span>
+                        <span className="text-slate-400 truncate">{indicator.domain}</span>
                         <span>•</span>
                         <span className="text-cyan-400">PMESII: {indicator.pmesii}</span>
                         <span>•</span>
-                        <span className="text-amber-400">ASCOPE: {indicator.ascope}</span>
+                        <span className="text-slate-300">ASCOPE: {indicator.ascope}</span>
                       </div>
 
                       <p className="text-[11px] text-slate-400 line-clamp-1 group-hover:text-slate-300">
@@ -235,7 +233,7 @@ export const IndicatorCategorySelector: React.FC<IndicatorCategorySelectorProps>
                     </div>
 
                     {isSelected && (
-                      <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-1" />
+                      <Check className="w-4 h-4 text-cyan-400 shrink-0 mt-1" />
                     )}
                   </button>
                 );

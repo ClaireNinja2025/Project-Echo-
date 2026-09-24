@@ -22,7 +22,13 @@ import {
   MoeItem 
 } from '../data/doctrineAnalyticsData';
 
-export const MoeMopAssessment: React.FC = () => {
+interface MoeMopAssessmentProps {
+  onNavigateToOpDesign?: () => void;
+}
+
+export const MoeMopAssessment: React.FC<MoeMopAssessmentProps> = ({
+  onNavigateToOpDesign,
+}) => {
   const [selectedLoeFilter, setSelectedLoeFilter] = useState<string>('ALL');
   const [activeTab, setActiveTab] = useState<'MOE' | 'MOP' | 'CAUSAL_MATRIX'>('MOE');
 
@@ -43,9 +49,9 @@ export const MoeMopAssessment: React.FC = () => {
   );
 
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-950 text-slate-100 p-4 md:p-6 space-y-6 font-sans">
+    <div className="flex-1 overflow-y-auto bg-black text-slate-100 p-4 md:p-6 space-y-6 font-sans">
       {/* Doctrinal Assessment Header */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+      <div className="bg-black border border-slate-800 rounded-xl p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-lg bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
             <Target className="w-5 h-5" />
@@ -55,7 +61,7 @@ export const MoeMopAssessment: React.FC = () => {
               <h2 className="text-base md:text-lg font-bold text-white font-mono">
                 Measures of Effectiveness (MOE) & Measures of Performance (MOP)
               </h2>
-              <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-emerald-300 border border-slate-700">
+              <span className="text-xs font-mono px-2 py-0.5 rounded bg-neutral-900 text-emerald-300 border border-slate-800">
                 JP 5-0 / FM 3-57 / ATP 3-57.80
               </span>
             </div>
@@ -66,7 +72,19 @@ export const MoeMopAssessment: React.FC = () => {
         </div>
 
         {/* View Switcher Tabs */}
-        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-mono">
+        <div className="flex items-center gap-2 flex-wrap">
+          {onNavigateToOpDesign && (
+            <button
+              onClick={onNavigateToOpDesign}
+              className="px-2.5 py-1.5 bg-black hover:bg-neutral-900 border border-slate-800 text-emerald-300 rounded text-xs font-mono flex items-center gap-1 transition-colors cursor-pointer"
+              title="View corresponding Lines of Effort in Operational Design Framework"
+            >
+              <Compass className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Op Design LOEs</span>
+            </button>
+          )}
+
+          <div className="flex items-center gap-1 bg-black p-1 rounded-lg border border-slate-800 text-xs font-mono">
           <button
             onClick={() => setActiveTab('MOE')}
             className={`px-3 py-1.5 rounded transition-all ${
@@ -99,6 +117,7 @@ export const MoeMopAssessment: React.FC = () => {
           </button>
         </div>
       </div>
+    </div>
 
       {/* Doctrinal Definition Anchor Banner */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

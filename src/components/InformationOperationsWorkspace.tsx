@@ -25,7 +25,8 @@ import {
   Sliders,
   ExternalLink,
   MessageSquare,
-  Users
+  Users,
+  Compass
 } from 'lucide-react';
 import { 
   GeographicCombatantCommand, 
@@ -38,10 +39,12 @@ import {
 
 interface InformationOperationsWorkspaceProps {
   onNavigateToAorMap?: (aorId: string) => void;
+  onNavigateToOpDesign?: () => void;
 }
 
 export const InformationOperationsWorkspace: React.FC<InformationOperationsWorkspaceProps> = ({
-  onNavigateToAorMap
+  onNavigateToAorMap,
+  onNavigateToOpDesign
 }) => {
   // Active AOR Selection
   const [selectedAor, setSelectedAor] = useState<GeographicCombatantCommand>('USINDOPACOM');
@@ -241,17 +244,30 @@ OFFICIAL: CHIEF OF STAFF, TF-IA ${selectedAor}`;
               ))}
             </div>
 
-            {/* Toggle Mission Header Collapse */}
-            <button
-              onClick={() => setIsMissionHeaderCollapsed(!isMissionHeaderCollapsed)}
-              className="px-2 py-1 text-xs text-slate-400 hover:text-white bg-slate-800 rounded border border-slate-700 flex items-center gap-1.5"
-              title="Toggle Mission Statement Editor"
-            >
-              <span className="font-mono text-[11px]">
-                {isMissionHeaderCollapsed ? 'Expand Mission Header' : 'Collapse Header'}
-              </span>
-              {isMissionHeaderCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
-            </button>
+            <div className="flex items-center gap-2">
+              {onNavigateToOpDesign && (
+                <button
+                  onClick={onNavigateToOpDesign}
+                  className="px-2.5 py-1 text-xs text-purple-300 hover:text-white bg-black hover:bg-neutral-900 rounded border border-slate-800 flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Cross-reference with Army Operational Design Framework (ADP 5-0)"
+                >
+                  <Compass className="w-3.5 h-3.5 text-purple-400" />
+                  <span className="font-mono text-[11px] hidden md:inline">Operational Design (ADP 5-0)</span>
+                </button>
+              )}
+
+              {/* Toggle Mission Header Collapse */}
+              <button
+                onClick={() => setIsMissionHeaderCollapsed(!isMissionHeaderCollapsed)}
+                className="px-2 py-1 text-xs text-slate-400 hover:text-white bg-black rounded border border-slate-800 flex items-center gap-1.5 cursor-pointer"
+                title="Toggle Mission Statement Editor"
+              >
+                <span className="font-mono text-[11px]">
+                  {isMissionHeaderCollapsed ? 'Expand Mission Header' : 'Collapse Header'}
+                </span>
+                {isMissionHeaderCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+              </button>
+            </div>
           </div>
 
           {/* Expanded Mission Statement Box */}

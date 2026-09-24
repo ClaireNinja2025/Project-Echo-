@@ -19,7 +19,11 @@ import {
   Sparkles,
   Info,
   RadioTower,
-  Crosshair
+  Crosshair,
+  ChevronLeft,
+  ChevronRight,
+  Key,
+  X
 } from 'lucide-react';
 import { 
   COMBATANT_COMMANDS, 
@@ -42,7 +46,7 @@ interface GlobalAorWorldMapProps {
   onNavigateToIoWorkspace?: (aorAcronym: string) => void;
 }
 
-type MapTileProvider = 'satellite' | 'dark' | 'osm';
+type MapTileProvider = 'dark' | 'streets' | 'satellite' | 'osm';
 
 export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
   onNavigateToTacticalCop,
@@ -51,6 +55,7 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const polygonLayersRef = useRef<{ [aorId: string]: L.Polygon }>({});
+  const polygonGroupRef = useRef<L.LayerGroup | null>(null);
   const markerLayersRef = useRef<L.LayerGroup | null>(null);
   const chokepointsGroupRef = useRef<L.LayerGroup | null>(null);
   const indicatorLayerGroupRef = useRef<L.LayerGroup | null>(null);
@@ -61,9 +66,12 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
   const [selectedAorId, setSelectedAorId] = useState<string>('aor-northcom');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [tileProvider, setTileProvider] = useState<MapTileProvider>('dark');
+  const [showAorOutlines, setShowAorOutlines] = useState<boolean>(false);
   const [showChokepoints, setShowChokepoints] = useState<boolean>(true);
   const [showHqMarkers, setShowHqMarkers] = useState<boolean>(true);
   const [showTacticalAoPin, setShowTacticalAoPin] = useState<boolean>(true);
+  const [isReloading, setIsReloading] = useState<boolean>(false);
+  const [reloadNotice, setReloadNotice] = useState<string | null>(null);
 
   // 36 Information Indicator State across all AORs
   const [selectedIndicator, setSelectedIndicator] = useState<InformationIndicator | null>(
@@ -72,6 +80,38 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
   const [showIndicatorPoints, setShowIndicatorPoints] = useState<boolean>(true);
   const [filterIndicatorToSelectedAor, setFilterIndicatorToSelectedAor] = useState<boolean>(false);
   const [selectedPoint, setSelectedPoint] = useState<IndicatorDataPoint | null>(null);
+  const [isInspectorCollapsed, setIsInspectorCollapsed] = useState<boolean>(false);
+  const [showKeyInfoModal, setShowKeyInfoModal] = useState<boolean>(false);
+
+  // Invalidate map size when inspector collapses or expands
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      mapInstanceRef.current?.invalidateSize();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [isInspectorCollapsed]);
+
+  // Handle ResizeObserver to prevent gray/unloaded tile areas
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    const observer = new ResizeObserver(() => {
+      mapInstanceRef.current?.invalidateSize();
+    });
+    observer.observe(mapContainerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Multi-tier mount sizing
+  useEffect(() => {
+    const t1 = setTimeout(() => mapInstanceRef.current?.invalidateSize(), 100);
+    const t2 = setTimeout(() => mapInstanceRef.current?.invalidateSize(), 350);
+    const t3 = setTimeout(() => mapInstanceRef.current?.invalidateSize(), 700);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, []);
 
   const selectedAor =
     COMBATANT_COMMANDS.find((a) => a.id === selectedAorId) || COMBATANT_COMMANDS[0];
@@ -79,20 +119,47 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
   // Tile layer URLs
   const tileLayersConfig = {
     dark: {
+      name: 'Carto Dark',
       url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap',
       labels: null,
     },
+    streets: {
+      name: 'Street Grid',
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+      attribution: 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom',
+      labels: null,
+    },
     satellite: {
+      name: 'Satellite Recon',
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       attribution: '&copy; Esri &copy; Maxar, Earthstar Geographics',
       labels: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
     },
     osm: {
+      name: 'Tactical Topo',
       url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       attribution: '&copy; OpenStreetMap contributors',
       labels: null,
     },
+  };
+
+  const handleReloadMap = () => {
+    setIsReloading(true);
+    setReloadNotice('Synchronizing map tiles & coordinates...');
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.invalidateSize();
+      tileLayerRef.current?.redraw();
+      if (labelsLayerRef.current) {
+        labelsLayerRef.current.redraw();
+      }
+    }
+    setTimeout(() => {
+      mapInstanceRef.current?.invalidateSize();
+      setIsReloading(false);
+      setReloadNotice('Map synchronized (WGS84 // EPSG:3857)');
+      setTimeout(() => setReloadNotice(null), 3000);
+    }, 450);
   };
 
   // Initialize Leaflet Map
@@ -146,6 +213,13 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
     chokepointsGroupRef.current = L.layerGroup().addTo(map);
     indicatorLayerGroupRef.current = L.layerGroup().addTo(map);
 
+    // Layer group for AOR Polygons (kept off map by default to remove outline boxes)
+    const polygonGroup = L.layerGroup();
+    polygonGroupRef.current = polygonGroup;
+    if (showAorOutlines) {
+      polygonGroup.addTo(map);
+    }
+
     // Render AOR Polygons
     const polygons: { [aorId: string]: L.Polygon } = {};
 
@@ -159,7 +233,7 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
         fillColor: cmd.colorTheme.stroke,
         fillOpacity: isSelected ? 0.28 : 0.12,
         className: `aor-poly-${cmd.id}`,
-      }).addTo(map);
+      }).addTo(polygonGroup);
 
       // Tooltip
       polygon.bindTooltip(
@@ -238,20 +312,31 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
     Object.values(polygonLayersRef.current).forEach((poly) => poly.bringToFront());
   }, [tileProvider]);
 
-  // Update Polygon Styling when selected AOR changes
+  // Handle AOR Outlines Visibility and Styling
   useEffect(() => {
-    Object.entries(polygonLayersRef.current).forEach(([aorId, poly]) => {
-      const isSelected = aorId === selectedAorId;
-      poly.setStyle({
-        weight: isSelected ? 3.5 : 1.8,
-        dashArray: isSelected ? undefined : '6, 5',
-        fillOpacity: isSelected ? 0.3 : 0.12,
-      });
-      if (isSelected) {
-        poly.bringToFront();
+    if (!mapInstanceRef.current || !polygonGroupRef.current) return;
+
+    if (showAorOutlines) {
+      if (!mapInstanceRef.current.hasLayer(polygonGroupRef.current)) {
+        polygonGroupRef.current.addTo(mapInstanceRef.current);
       }
-    });
-  }, [selectedAorId]);
+      Object.entries(polygonLayersRef.current).forEach(([aorId, poly]) => {
+        const isSelected = aorId === selectedAorId;
+        poly.setStyle({
+          weight: isSelected ? 3.5 : 1.8,
+          dashArray: isSelected ? undefined : '6, 5',
+          fillOpacity: isSelected ? 0.28 : 0.12,
+        });
+        if (isSelected) {
+          poly.bringToFront();
+        }
+      });
+    } else {
+      if (mapInstanceRef.current.hasLayer(polygonGroupRef.current)) {
+        mapInstanceRef.current.removeLayer(polygonGroupRef.current);
+      }
+    }
+  }, [selectedAorId, showAorOutlines]);
 
   // Render Tactical Markers, Chokepoints, and HQ Pins
   useEffect(() => {
@@ -260,15 +345,15 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
     markerLayersRef.current.clearLayers();
     chokepointsGroupRef.current.clearLayers();
 
-    // 1. AOR Central Nameplate Badges
+    // 1. AOR Central Nameplate Badges (borderless sleek badge without outline box)
     COMBATANT_COMMANDS.forEach((cmd) => {
       const isSelected = cmd.id === selectedAorId;
       const html = `
         <div class="cursor-pointer select-none transition-transform hover:scale-110" style="transform: translate(-50%, -50%);">
-          <div class="px-2 py-0.5 rounded shadow-lg font-mono font-bold text-[11px] flex items-center gap-1.5 border whitespace-nowrap ${
+          <div class="px-2.5 py-1 rounded font-mono font-bold text-[11px] flex items-center gap-1.5 whitespace-nowrap shadow-md ${
             isSelected
-              ? 'bg-slate-900 text-white border-white scale-110 shadow-2xl ring-2 ring-blue-500'
-              : 'bg-slate-950/90 text-slate-300 border-slate-700'
+              ? 'bg-blue-600 text-white shadow-xl ring-2 ring-blue-400'
+              : 'bg-black/90 text-slate-200'
           }">
             <span class="w-2 h-2 rounded-full" style="background-color: ${cmd.colorTheme.stroke};"></span>
             <span>${cmd.acronym}</span>
@@ -483,9 +568,9 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
     : 0;
 
   return (
-    <div className="flex flex-col h-full flex-1 bg-slate-950 text-slate-100 overflow-hidden">
+    <div className="flex flex-col h-full flex-1 bg-black text-slate-100 overflow-hidden">
       {/* Top Header & Indicator Selection Bar */}
-      <div className="p-3 bg-slate-900 border-b border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-md z-10">
+      <div className="p-3 bg-black border-b border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-md z-10">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shadow-inner shrink-0">
             <Globe className="w-4 h-4" />
@@ -525,7 +610,7 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
             className={`px-2.5 py-1 rounded border text-xs font-mono transition-colors flex items-center gap-1.5 ${
               filterIndicatorToSelectedAor
                 ? 'bg-purple-950 border-purple-600 text-purple-300'
-                : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                : 'bg-black border-slate-800 text-slate-400 hover:text-slate-200'
             }`}
             title="Toggle between displaying survey dots across all 6 AORs or only in active AOR"
           >
@@ -533,8 +618,24 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
             <span>{filterIndicatorToSelectedAor ? `Filter: ${selectedAor.acronym}` : 'Scope: All 6 AORs'}</span>
           </button>
 
+          {/* Toggle AOR Boundary Outlines */}
+          <label 
+            className="flex items-center space-x-1.5 bg-black border border-slate-800 px-2 py-1 rounded cursor-pointer text-xs font-mono"
+            title="AOR boundary outline boxes (off by default)"
+          >
+            <input
+              type="checkbox"
+              checked={showAorOutlines}
+              onChange={(e) => setShowAorOutlines(e.target.checked)}
+              className="accent-blue-600 rounded"
+            />
+            <span className={showAorOutlines ? 'text-cyan-300' : 'text-slate-400'}>
+              AOR Outlines: {showAorOutlines ? 'ON' : 'OFF'}
+            </span>
+          </label>
+
           {/* Toggle Survey Dots */}
-          <label className="flex items-center space-x-1.5 bg-slate-950 border border-slate-800 px-2 py-1 rounded cursor-pointer text-xs font-mono">
+          <label className="flex items-center space-x-1.5 bg-black border border-slate-800 px-2 py-1 rounded cursor-pointer text-xs font-mono">
             <input
               type="checkbox"
               checked={showIndicatorPoints}
@@ -547,7 +648,7 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
           </label>
 
           {/* Map Layer Switcher */}
-          <div className="bg-slate-950 border border-slate-800 rounded p-0.5 flex items-center font-mono">
+          <div className="bg-black border border-slate-800 rounded p-0.5 flex items-center font-mono">
             <button
               onClick={() => setTileProvider('dark')}
               className={`px-2 py-0.5 rounded text-xs transition-colors ${
@@ -557,6 +658,17 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
               }`}
             >
               Dark
+            </button>
+            <button
+              onClick={() => setTileProvider('streets')}
+              className={`px-2 py-0.5 rounded text-xs transition-colors ${
+                tileProvider === 'streets'
+                  ? 'bg-slate-800 text-cyan-300 font-bold shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Global Street & Road Cartography"
+            >
+              Streets
             </button>
             <button
               onClick={() => setTileProvider('satellite')}
@@ -580,13 +692,53 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
             </button>
           </div>
 
+          {/* Dedicated Reload Map Button */}
+          <button
+            onClick={handleReloadMap}
+            disabled={isReloading}
+            className={`px-2.5 py-1 rounded text-xs font-mono flex items-center gap-1.5 transition-all border cursor-pointer ${
+              isReloading
+                ? 'bg-cyan-950/80 border-cyan-500 text-cyan-200 animate-pulse'
+                : 'bg-black hover:bg-neutral-900 text-cyan-300 hover:text-cyan-200 border-slate-700 shadow-sm'
+            }`}
+            title="Reload map canvas, recalculate viewport bounds, and refresh GIS tiles"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'animate-spin text-cyan-400' : 'text-cyan-400'}`} />
+            <span className="font-bold">{isReloading ? 'RELOADING...' : 'RELOAD MAP'}</span>
+          </button>
+
+          {/* GIS & API Key Status Guide Button */}
+          <button
+            onClick={() => setShowKeyInfoModal(true)}
+            className="px-2.5 py-1 bg-black hover:bg-neutral-900 border border-slate-700 text-slate-300 rounded text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="View API Key & Cartography Engine Status Guide"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="hidden xl:inline text-slate-200">GIS: READY</span>
+            <Info className="w-3.5 h-3.5 text-cyan-400" />
+          </button>
+
           <button
             onClick={handleResetWorldView}
-            className="px-2.5 py-1 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded text-xs font-mono flex items-center gap-1 transition-colors"
+            className="px-2.5 py-1 bg-black hover:bg-neutral-900 border border-slate-800 text-slate-300 rounded text-xs font-mono flex items-center gap-1 transition-colors"
             title="Reset to Full World Projection"
           >
-            <RefreshCw className="w-3 h-3" />
-            <span className="hidden sm:inline">World</span>
+            <span className="hidden sm:inline">Reset View</span>
+          </button>
+
+          {/* Inspector Collapsible Toggle */}
+          <button
+            onClick={() => setIsInspectorCollapsed(!isInspectorCollapsed)}
+            className={`px-2.5 py-1 rounded flex items-center gap-1.5 transition-colors font-mono cursor-pointer text-xs border ${
+              isInspectorCollapsed
+                ? 'bg-blue-600 hover:bg-blue-500 text-white border-blue-500 shadow-sm'
+                : 'bg-black hover:bg-neutral-900 text-slate-300 border-slate-800'
+            }`}
+            title={isInspectorCollapsed ? 'Expand Intelligence & Civil Assessment Inspector' : 'Collapse Inspector for full-screen operational map'}
+          >
+            <Layers className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="hidden sm:inline">Inspector:</span>
+            <span className="font-bold">{isInspectorCollapsed ? 'EXPAND' : 'COLLAPSE'}</span>
           </button>
         </div>
       </div>
@@ -594,9 +746,9 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
       {/* Main View: Real Leaflet Map (Left) + Intelligence Drawer (Right) */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* Left GIS World Map Container */}
-        <div className="flex-1 flex flex-col bg-slate-950 relative border-r border-slate-800 overflow-hidden min-w-0">
+        <div className="flex-1 flex flex-col bg-black relative border-r border-slate-800 overflow-hidden min-w-0">
           {/* Quick-Switch Ribbon of all 6 Combatant Commands */}
-          <div className="px-3 py-1.5 bg-slate-900/90 border-b border-slate-800 flex items-center gap-2 overflow-x-auto text-xs font-mono z-10 backdrop-blur-sm">
+          <div className="px-3 py-1.5 bg-black border-b border-slate-800 flex items-center gap-2 overflow-x-auto text-xs font-mono z-10">
             <span className="text-slate-500 text-[11px] whitespace-nowrap font-bold">THEATER:</span>
             {COMBATANT_COMMANDS.map((cmd) => {
               const isSelected = selectedAorId === cmd.id;
@@ -607,7 +759,7 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
                   className={`px-2.5 py-1 rounded transition-all whitespace-nowrap flex items-center gap-1.5 ${
                     isSelected
                       ? 'bg-blue-600 text-white font-bold shadow-md ring-1 ring-blue-400'
-                      : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                      : 'bg-black border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-neutral-900'
                   }`}
                 >
                   <span
@@ -643,6 +795,14 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
             className="flex-1 w-full h-full bg-slate-950 relative z-0"
             style={{ minHeight: '380px' }}
           />
+
+          {/* Map Reload Notification Badge */}
+          {reloadNotice && (
+            <div className="absolute top-12 left-1/2 transform -translate-x-1/2 z-30 px-3 py-1.5 rounded-full bg-slate-900/90 border border-cyan-500/60 text-cyan-300 font-mono text-xs flex items-center gap-2 shadow-2xl backdrop-blur-md animate-fade-in">
+              <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'animate-spin text-cyan-400' : 'text-emerald-400'}`} />
+              <span>{reloadNotice}</span>
+            </div>
+          )}
 
           {/* Bottom Left Legend Box for Map Layers & Active Indicator */}
           <div className="absolute bottom-3 left-3 bg-slate-900/95 border border-slate-800 rounded-lg p-3 backdrop-blur-md text-[11px] font-mono space-y-1.5 z-10 shadow-2xl max-w-sm hidden md:block">
@@ -684,35 +844,46 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
         </div>
 
         {/* Right Intelligence Inspector: Dual Information Layer & CCMD Details */}
-        <div className="w-full lg:w-[420px] bg-slate-900 flex flex-col p-4 md:p-5 space-y-4 overflow-y-auto border-t lg:border-t-0 shadow-2xl shrink-0">
-          {/* Header Card with Selected Theater Identity */}
-          <div className="border-b border-slate-800 pb-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <span
-                className="px-2.5 py-0.5 rounded text-xs font-mono font-bold"
-                style={{
-                  backgroundColor: selectedAor.colorTheme.fill,
-                  color: selectedAor.colorTheme.stroke,
-                  border: `1px solid ${selectedAor.colorTheme.stroke}`,
-                }}
-              >
-                {selectedAor.acronym}
-              </span>
+        {!isInspectorCollapsed ? (
+          <div className="w-full lg:w-[26%] xl:w-[25%] min-w-[320px] max-w-[420px] bg-black flex flex-col p-4 space-y-4 overflow-y-auto border-t lg:border-t-0 lg:border-l border-slate-800 shadow-2xl shrink-0 z-20">
+            {/* Header Card with Selected Theater Identity */}
+            <div className="border-b border-slate-800 pb-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span
+                  className="px-2.5 py-0.5 rounded text-xs font-mono font-bold"
+                  style={{
+                    backgroundColor: selectedAor.colorTheme.fill,
+                    color: selectedAor.colorTheme.stroke,
+                    border: `1px solid ${selectedAor.colorTheme.stroke}`,
+                  }}
+                >
+                  {selectedAor.acronym}
+                </span>
 
-              <span
-                className={`px-2 py-0.5 text-[10px] font-mono rounded font-bold ${
-                  selectedAor.stabilityStatus === 'CRITICAL_DISRUPTION'
-                    ? 'bg-rose-950 text-rose-300 border border-rose-800'
-                    : selectedAor.stabilityStatus === 'ELEVATED_CONTEST'
-                    ? 'bg-amber-950 text-amber-300 border border-amber-800'
-                    : selectedAor.stabilityStatus === 'MODERATE_STRESS'
-                    ? 'bg-yellow-950 text-yellow-300 border border-yellow-800'
-                    : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                }`}
-              >
-                CIVIL STABILITY: {selectedAor.civilStabilityScore}/100
-              </span>
-            </div>
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`px-2 py-0.5 text-[10px] font-mono rounded font-bold ${
+                      selectedAor.stabilityStatus === 'CRITICAL_DISRUPTION'
+                        ? 'bg-rose-950 text-rose-300 border border-rose-800'
+                        : selectedAor.stabilityStatus === 'ELEVATED_CONTEST'
+                        ? 'bg-amber-950 text-amber-300 border border-amber-800'
+                        : selectedAor.stabilityStatus === 'MODERATE_STRESS'
+                        ? 'bg-yellow-950 text-yellow-300 border border-yellow-800'
+                        : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                    }`}
+                  >
+                    CIVIL: {selectedAor.civilStabilityScore}/100
+                  </span>
+
+                  <button
+                    onClick={() => setIsInspectorCollapsed(true)}
+                    className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                    title="Collapse Inspector"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
 
             <h3 className="text-base font-bold text-white leading-snug">{selectedAor.name}</h3>
 
@@ -924,7 +1095,120 @@ export const GlobalAorWorldMap: React.FC<GlobalAorWorldMapProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        /* Collapsed Inspector Rail on Right Edge */
+        <div
+          onClick={() => setIsInspectorCollapsed(false)}
+          className="w-11 bg-black border-l border-slate-800 flex flex-col items-center py-3 select-none cursor-pointer hover:bg-neutral-900 transition-colors z-20 shrink-0 group"
+          title="Expand Intelligence & Civil Assessment Inspector"
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsInspectorCollapsed(false);
+            }}
+            className="p-1.5 rounded bg-black hover:bg-neutral-900 text-cyan-400 border border-slate-700 mb-4 transition-transform group-hover:scale-110"
+            title="Expand Inspector"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <span className="[writing-mode:vertical-rl] rotate-180 text-[11px] font-mono font-bold tracking-wider text-slate-400 group-hover:text-cyan-300 uppercase whitespace-nowrap flex items-center gap-2">
+              <Layers className="w-3.5 h-3.5 text-cyan-400 -rotate-90 inline-block" />
+              <span>Intelligence & Assessment Inspector</span>
+            </span>
+          </div>
+
+          <div className="mt-auto flex flex-col items-center gap-1.5 pt-3 border-t border-slate-800 text-center">
+            <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" title="Feed Online" />
+            <span className="text-[9px] font-mono text-slate-400">{selectedAor.acronym}</span>
+          </div>
+        </div>
+      )}
     </div>
-  );
+
+    {/* Key & Cartography Engine Status Modal */}
+    {showKeyInfoModal && (
+      <div 
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in"
+        onClick={() => setShowKeyInfoModal(false)}
+      >
+        <div 
+          className="bg-black border border-cyan-500/50 rounded-xl shadow-2xl max-w-xl w-full p-6 text-slate-200 font-mono space-y-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center gap-2 text-cyan-400">
+              <Globe className="w-5 h-5 text-cyan-400" />
+              <h3 className="text-base font-bold tracking-wide">GIS Cartography & API Key Status</h3>
+            </div>
+            <button
+              onClick={() => setShowKeyInfoModal(false)}
+              className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Fully Done For You Notice */}
+          <div className="bg-emerald-950/60 border border-emerald-500/50 rounded-lg p-3.5 space-y-1.5">
+            <div className="flex items-center gap-2 text-emerald-300 font-bold text-sm">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Everything Is Ready — No Key Required</span>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              We have fully configured and optimized 4 worldwide GIS cartographic providers into the operational map engine. You do not need to purchase or configure an API key to view full satellite, street, and tactical terrain.
+            </p>
+          </div>
+
+          {/* Active Cartography Modes */}
+          <div className="space-y-2 text-xs">
+            <div className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Active Basemaps In Engine:</div>
+            <div className="grid grid-cols-2 gap-2 text-[11px]">
+              <div className="p-2 rounded bg-slate-950 border border-slate-800 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                <span><strong>Streets:</strong> Esri Global Street Grid</span>
+              </div>
+              <div className="p-2 rounded bg-slate-950 border border-slate-800 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                <span><strong>Sat:</strong> High-Res Satellite + Borders</span>
+              </div>
+              <div className="p-2 rounded bg-slate-950 border border-slate-800 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+                <span><strong>Dark:</strong> Tactical Night Operations</span>
+              </div>
+              <div className="p-2 rounded bg-slate-950 border border-slate-800 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span><strong>OSM:</strong> Tactical Topo & Contours</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Step-by-Step If User Wants Custom Key */}
+          <div className="bg-slate-950 border border-slate-800 rounded-lg p-3.5 space-y-2 text-xs">
+            <div className="flex items-center gap-2 text-amber-300 font-bold text-[11px]">
+              <Key className="w-3.5 h-3.5 text-amber-400" />
+              <span>How To Bind A Private Google Maps API Key (Optional):</span>
+            </div>
+            <ol className="list-decimal list-inside space-y-1 text-slate-300 text-[11px] leading-relaxed">
+              <li>Open the <strong>Secrets</strong> panel in AI Studio (left sidebar).</li>
+              <li>Add variable name: <code className="text-cyan-300 bg-slate-900 px-1 py-0.5 rounded border border-slate-700">VITE_GOOGLE_MAPS_API_KEY</code>.</li>
+              <li>Paste your Google Cloud key and click <strong>Save</strong>.</li>
+            </ol>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={() => setShowKeyInfoModal(false)}
+              className="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-bold transition-colors cursor-pointer"
+            >
+              Close & Return to Map
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+);
 };

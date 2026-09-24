@@ -16,11 +16,18 @@ import {
   RotateCcw, 
   ArrowRight,
   Shield,
-  HelpCircle
+  HelpCircle,
+  Target
 } from 'lucide-react';
 import { DOCTRINAL_COAS, DetailedCoa, WargameTurn } from '../data/doctrineAnalyticsData';
 
-export const CoaWargamingAnalysis: React.FC = () => {
+interface CoaWargamingAnalysisProps {
+  onNavigateToOpDesign?: () => void;
+}
+
+export const CoaWargamingAnalysis: React.FC<CoaWargamingAnalysisProps> = ({
+  onNavigateToOpDesign,
+}) => {
   const [selectedCoaId, setSelectedCoaId] = useState<string>(DOCTRINAL_COAS[0].id);
   const [activeTurnNumber, setActiveTurnNumber] = useState<number>(1);
   const [viewMode, setViewMode] = useState<'WARGAMING_SIMULATOR' | 'COA_COMPARISON_MATRIX'>('WARGAMING_SIMULATOR');
@@ -29,9 +36,9 @@ export const CoaWargamingAnalysis: React.FC = () => {
   const activeTurn = selectedCoa.wargameTurns.find((t) => t.turnNumber === activeTurnNumber) || selectedCoa.wargameTurns[0];
 
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-950 text-slate-100 p-4 md:p-6 space-y-6 font-sans">
+    <div className="flex-1 overflow-y-auto bg-black text-slate-100 p-4 md:p-6 space-y-6 font-sans">
       {/* Header Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+      <div className="bg-black border border-slate-800 rounded-xl p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-lg bg-amber-600/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
             <Scale className="w-5 h-5" />
@@ -41,7 +48,7 @@ export const CoaWargamingAnalysis: React.FC = () => {
               <h2 className="text-base md:text-lg font-bold text-white font-mono">
                 COA Development & Civil-Military Wargaming Suite
               </h2>
-              <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-amber-300 border border-slate-700">
+              <span className="text-xs font-mono px-2 py-0.5 rounded bg-neutral-900 text-amber-300 border border-slate-800">
                 FM 5-0 MDMP STEPS 3 & 4 / FM 3-57
               </span>
             </div>
@@ -52,7 +59,7 @@ export const CoaWargamingAnalysis: React.FC = () => {
         </div>
 
         {/* View Mode Switcher */}
-        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-mono">
+        <div className="flex items-center gap-1 bg-black p-1 rounded-lg border border-slate-800 text-xs font-mono">
           <button
             onClick={() => setViewMode('WARGAMING_SIMULATOR')}
             className={`px-3 py-1.5 rounded transition-all flex items-center gap-1.5 ${
@@ -76,6 +83,29 @@ export const CoaWargamingAnalysis: React.FC = () => {
             <span>FM 5-0 Screening Matrix</span>
           </button>
         </div>
+      </div>
+
+      {/* Operational Design Linkage Banner */}
+      <div className="bg-black border border-emerald-900/60 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono">
+        <div className="flex items-center space-x-2.5">
+          <Target className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div>
+            <span className="text-emerald-300 font-bold">OPERATIONAL DESIGN SYNCHRONIZATION (ADP 5-0):</span>
+            <span className="text-slate-400 ml-1.5 text-[11px]">
+              Wargamed actions directly map to Lines of Effort (LOEs) and target Adversary Critical Vulnerabilities (CVs) to achieve Decisive Points.
+            </span>
+          </div>
+        </div>
+
+        {onNavigateToOpDesign && (
+          <button
+            onClick={onNavigateToOpDesign}
+            className="px-3 py-1 bg-emerald-950 hover:bg-emerald-900 border border-emerald-700 text-emerald-300 rounded text-xs flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+          >
+            <Compass className="w-3.5 h-3.5" />
+            <span>Open Operational Design</span>
+          </button>
+        )}
       </div>
 
       {/* COA Selection Cards */}

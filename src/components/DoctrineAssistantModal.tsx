@@ -45,11 +45,13 @@ export const DoctrineAssistantModal: React.FC<DoctrineAssistantModalProps> = ({
   ]);
 
   const quickPrompts = [
+    'What are the core elements of Operational Design under ADP 5-0 & JP 5-0?',
+    'Explain Center of Gravity (COG), CC, CR, and CV under the Dr. Strange Model',
+    'How do Defeat Mechanisms differ from Stability Mechanisms in campaign design?',
+    'How do Decisive Points connect along Lines of Effort (LOEs) to reach End State conditions?',
     'Explain the 5 Army Information Activities under ADP 3-13',
     'How does CKI differ from intelligence collection under ATP 3-57.50?',
     'What are the statutory firewalls between Public Affairs and MISO?',
-    'Explain legacy IRC vs. Joint Operations in the Information Environment (OIE)',
-    'How does CIO safeguard US Person privacy under DoD Directive 5240.01?',
   ];
 
   const handleSend = async (textToSend: string) => {
@@ -91,10 +93,10 @@ export const DoctrineAssistantModal: React.FC<DoctrineAssistantModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-6">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-6">
+      <div className="bg-black border border-slate-800 rounded-2xl max-w-4xl w-full h-[90vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Modal Header */}
-        <div className="p-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+        <div className="p-4 bg-black border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-9 h-9 rounded-lg bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
               <BookOpen className="w-5 h-5" />
@@ -144,15 +146,15 @@ export const DoctrineAssistantModal: React.FC<DoctrineAssistantModalProps> = ({
 
         {/* Content Body */}
         {activeTab === 'chat' ? (
-          <div className="flex-1 flex flex-col overflow-hidden bg-slate-950">
+          <div className="flex-1 flex flex-col overflow-hidden bg-black">
             {/* Quick Prompt Carousel */}
-            <div className="p-3 bg-slate-900/60 border-b border-slate-800/80 flex items-center space-x-2 overflow-x-auto scrollbar-none text-xs">
+            <div className="p-3 bg-black border-b border-slate-800 flex items-center space-x-2 overflow-x-auto scrollbar-none text-xs">
               <span className="text-slate-500 font-mono text-[10px] uppercase shrink-0">Prompts:</span>
               {quickPrompts.map((p, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSend(p)}
-                  className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap text-[11px] border border-slate-700/80 transition-colors"
+                  className="px-2.5 py-1 rounded bg-neutral-900 hover:bg-neutral-800 text-slate-300 whitespace-nowrap text-[11px] border border-slate-700/80 transition-colors"
                 >
                   {p}
                 </button>
@@ -172,7 +174,7 @@ export const DoctrineAssistantModal: React.FC<DoctrineAssistantModalProps> = ({
                       className={`max-w-[85%] rounded-xl p-3.5 text-xs leading-relaxed space-y-2 ${
                         isUser
                           ? 'bg-emerald-600 text-white rounded-br-none shadow-md font-sans'
-                          : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-bl-none shadow-sm'
+                          : 'bg-black border border-slate-800 text-slate-200 rounded-bl-none shadow-sm'
                       }`}
                     >
                       <p className="whitespace-pre-wrap">{msg.text}</p>
@@ -199,7 +201,7 @@ export const DoctrineAssistantModal: React.FC<DoctrineAssistantModalProps> = ({
               })}
 
               {isLoading && (
-                <div className="flex items-center space-x-2 text-slate-400 text-xs p-3 bg-slate-900 rounded-lg max-w-xs border border-slate-800">
+                <div className="flex items-center space-x-2 text-slate-400 text-xs p-3 bg-black rounded-lg max-w-xs border border-slate-800">
                   <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
                   <span>Consulting military doctrinal corpus...</span>
                 </div>
@@ -207,7 +209,7 @@ export const DoctrineAssistantModal: React.FC<DoctrineAssistantModalProps> = ({
             </div>
 
             {/* Input Bar */}
-            <div className="p-3 bg-slate-900 border-t border-slate-800 flex items-center space-x-2">
+            <div className="p-3 bg-black border-t border-slate-800 flex items-center space-x-2">
               <input
                 type="text"
                 value={query}
@@ -216,7 +218,7 @@ export const DoctrineAssistantModal: React.FC<DoctrineAssistantModalProps> = ({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSend(query);
                 }}
-                className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                className="flex-1 bg-black border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
               />
               <button
                 onClick={() => handleSend(query)}
@@ -230,14 +232,14 @@ export const DoctrineAssistantModal: React.FC<DoctrineAssistantModalProps> = ({
           </div>
         ) : (
           /* Crosswalk & Doctrinal Reference Tab */
-          <div className="flex-1 overflow-y-auto p-5 bg-slate-950 text-xs space-y-5">
+          <div className="flex-1 overflow-y-auto p-5 bg-black text-xs space-y-5">
             <div>
               <h3 className="text-sm font-bold text-white font-mono uppercase tracking-wider mb-2">
                 Appendix A: Joint & Army Doctrine Reference Matrix
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-left font-mono divide-y divide-slate-800 border border-slate-800 rounded-lg">
-                  <thead className="bg-slate-900 text-slate-400 text-[10px]">
+                  <thead className="bg-black text-slate-400 text-[10px]">
                     <tr>
                       <th className="p-2.5">PUBLICATION</th>
                       <th className="p-2.5">TITLE & DATE</th>

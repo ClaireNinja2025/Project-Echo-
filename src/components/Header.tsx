@@ -15,6 +15,7 @@ interface HeaderProps {
   onOpenGlobalMap: () => void;
   onOpenTacticalCop: () => void;
   onOpenIoWorkspace?: () => void;
+  onOpenOpDesign?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,11 +24,12 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenGlobalMap,
   onOpenTacticalCop,
   onOpenIoWorkspace,
+  onOpenOpDesign,
 }) => {
   return (
-    <header className="bg-slate-900 border-b border-slate-800 text-slate-100 z-20 shrink-0">
+    <header className="bg-black border-b border-slate-800 text-slate-100 z-20 shrink-0">
       {/* Classification & Operational Banner */}
-      <div className="bg-emerald-950/80 px-4 py-1.5 flex flex-wrap items-center justify-between text-xs tracking-wider font-mono gap-2">
+      <div className="bg-black border-b border-emerald-900/50 px-4 py-1.5 flex flex-wrap items-center justify-between text-xs tracking-wider font-mono gap-2">
         <div className="flex items-center space-x-3 text-emerald-400 flex-wrap">
           <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-900/90 text-emerald-300 font-semibold border border-emerald-700 text-[10px]">
             UNCLASSIFIED // REL TO USA, PARTNER COALITION
@@ -50,6 +52,19 @@ export const Header: React.FC<HeaderProps> = ({
               <Target className="w-3 h-3 text-emerald-400" />
               <span className="underline underline-offset-2">AO GRIFFIN (SECTOR 4)</span>
             </button>
+            {onOpenOpDesign && (
+              <>
+                <span className="text-slate-600">/</span>
+                <button
+                  onClick={onOpenOpDesign}
+                  className="inline-flex items-center gap-1 text-purple-300 hover:text-purple-200 transition-colors cursor-pointer"
+                  title="Switch to Army Operational Design Framework (ADP 5-0)"
+                >
+                  <Activity className="w-3 h-3 text-purple-400" />
+                  <span className="underline underline-offset-2">OP DESIGN (ADP 5-0)</span>
+                </button>
+              </>
+            )}
             {onOpenIoWorkspace && (
               <>
                 <span className="text-slate-600">/</span>
@@ -72,12 +87,12 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div className="flex items-center space-x-3 text-slate-400 text-xs">
-          <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[10px] text-slate-300">
+          <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded bg-black border border-slate-800 text-[10px] text-slate-300">
             <span className="text-slate-500">PHASE:</span>
             <span className="font-semibold text-cyan-300">{currentPhase.split(' - ')[0]}</span>
           </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[10px] text-slate-300">
+          <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded bg-black border border-slate-800 text-[10px] text-slate-300">
             <Lock className="w-2.5 h-2.5 text-amber-400" />
             <span className="font-semibold text-amber-300 truncate max-w-[160px]">{currentRole}</span>
           </div>
